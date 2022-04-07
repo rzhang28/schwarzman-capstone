@@ -1,0 +1,491 @@
+---
+title: "graphs"
+author: "Ryan Zhang"
+date: "3/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(tidyverse)
+library(tidymodels)
+library(rstanarm)
+library(Hmisc)
+library(corrplot)
+library(dplyr)
+library(data.table) 
+library(ggradar)
+library(scales)
+library(ggplot2)
+```
+
+## Snapshot of China's Debt
+
+```{r}
+mydata <- read_csv(file = "graphs/china_debt.csv",
+                   col_types = cols(
+                     type = col_character(),
+                     proportion = col_double()))
+
+ggplot(mydata, aes(x = "", y = proportion, fill = type)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  scale_fill_discrete(name = "",
+                      labels = c("Corporate", "Household")) +
+  theme_void() + 
+  labs(
+    title = "Snapshot of China's Debt",
+    subtitle = "June 2018",
+    caption = "Source: PBOC") +
+  ggsave(filename = "graphs/china_debt.jpg")
+```
+
+## Household Debt Breakdown
+
+```{r}
+mydata <- read_csv(file = "graphs/household_debt.csv",
+                   col_types = cols(
+                     type = col_character(),
+                     proportion = col_double()))
+
+ggplot(mydata, aes(x = "", y = proportion, fill = type)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  scale_fill_discrete(name = "",
+                      labels = c("Auto Loans", "Credit Cards", "Mortgage",
+                                "Operational", "Other Household Consumption")) +
+  theme_void() + 
+  labs(
+    title = "Composition of Household Debt in China",
+    subtitle = "June 2018",
+    caption = "Source: PBOC\n\nNote: Operational retail loans appear tobe largely lending to the\nself-employed and family businesses, although it is difficult\nto distinguish this type of lending from debt for consumption purposes.") +
+  ggsave(filename = "graphs/household_debt.jpg")
+```
+
+
+## Consumer Credit in China
+
+```{r}
+mydata <- read_csv(file = "graphs/china_consumer_credit.csv",
+                   col_types = cols(
+                     year = col_double(),
+                     consumer_credit = col_double()))
+
+ggplot(mydata, aes(x = year, y = consumer_credit)) +
+  geom_line() + 
+  theme_bw() + 
+  labs(
+    title = "China's Consumer Credit Balances",
+    subtitle = "2000-2015",
+    x = "Year",
+    y = "Consumer Credit (Trillions of RMB)",
+    caption = "Source: National Bureau of Statistics of China") +
+  ggsave(filename = "graphs/china_consumer_credit.jpg")
+```
+
+## China US Household Debt
+
+```{r}
+mydata <- read_csv(file = "graphs/china_us_household_debt.csv",
+                   col_types = cols(
+                     date = col_date(format="%m/%d/%y"),
+                     china_debt_to_income = col_double(),
+                     china_debt_to_gdp = col_double(),
+                     us_debt_to_gdp = col_double(),
+                     us_debt_to_income = col_double()))
+
+mydata <- mydata %>%
+  pivot_longer(names_to = "ratio", 
+               values_to = "percent", 
+               cols = -date)
+
+ggplot(mydata, aes(x = date, y = percent, color = ratio)) +
+  geom_line() + 
+  scale_color_discrete(name = "",
+                      labels = c("China HH Debt/GDP",
+                                 "China HH Debt/HH Income",
+                                 "U.S. HH Debt/GDP",
+                                 "U.S. HH Debt/HH Income")) +
+  ylim(0, 150) + 
+  theme_bw() + 
+  labs(
+    title = "Household (HH) Debt Levels",
+    subtitle = "2007-2020",
+    x = "Date",
+    y = "Percent (%)",
+    caption = "Source: PBOC, U.S. Federal Reserve") +
+  ggsave(filename = "graphs/china_us_household_debt.jpg")
+```
+
+## International Bankruptcy Systems
+
+```{r}
+mydata <- read_csv(file = "graphs/international_bankruptcy_systems_v3.csv",
+                   col_types = cols(
+                     jurisdiction = col_character(),
+                     bli = col_double()))
+
+ggplot(mydata, aes(x = reorder(jurisdiction, bli), y = bli, fill = continent)) +
+  geom_bar(stat = "identity") +
+  geom_text(size = 4, aes(label = sprintf("%0.2f", bli), hjust = 0.5, vjust = 3)) + 
+  scale_fill_manual(values = c("#F8766D", "#00B0F6", "#00BA38")) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    title = "BLI Scores Around the World",
+    x = "Jurisdiction",
+    y = "BLI Score",
+    fill = "Continent") +
+  ggsave(filename = "graphs/international_bankruptcy_systems.jpg")
+
+# ggplot(mydata, aes(x = reorder(jurisdiction, bli), y = bli)) +
+#   geom_bar(stat = "identity", fill = "steelblue") +
+#   geom_text(size = 4, aes(label = bli, hjust = 0.5, vjust = 3)) + 
+#   theme_bw() + 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(
+#     title = "BLI Scores Around the World",
+#     x = "Jurisdiction",
+#     y = "BLI Score") +
+#   ggsave(filename = "graphs/international_bankruptcy_systems.jpg")
+
+t.test(mydata$bli[mydata$continent=="Asia"], mydata$bli[mydata$continent=="Outside Asia"])
+```
+
+## Shenzhen Comparison
+
+```{r}
+ggplot(mydata, aes(x = bli)) +
+  geom_bar(stat = "identity") +
+  geom_text(size = 4, aes(label = bli, hjust = 0.5, vjust = 3)) + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    title = "BLI Scores Around the World",
+    x = "Jurisdiction",
+    y = "BLI Score",
+    fill = "Continent") +
+  ggsave(filename = "graphs/shenzhen_histograms.jpg")
+```
+
+## Correlation Matrix
+
+```{r}
+mydata <- read_csv(file = "graphs/international_bankruptcy_systems_v3.csv",
+                   col_types = cols(jurisdiction = col_character())) %>%
+  select(-jurisdiction) %>%
+  select(-bli_category) %>%
+  select(-continent)
+
+res <- cor(mydata)
+corrplot(res)
+
+mydata.rcorr = rcorr(as.matrix(mydata))
+mydata.coeff = mydata.rcorr$r
+round(mydata.coeff, 2)
+mydata.p = mydata.rcorr$P
+round(mydata.p, 2)
+
+write.csv(mydata.coeff, "graphs/coefficient_matrix_coeff.csv")
+write.csv(mydata.p, "graphs/coefficient_matrix_p.csv")
+```
+
+## Correlation Plots
+
+```{r}
+mydata <- read_csv(file = "graphs/international_bankruptcy_systems_v3.csv",
+                   col_types = cols(jurisdiction = col_character())) 
+
+ggplot(mydata, aes(x = bli, y = gdp_growth)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and GDP Growth",
+    x = "BLI Score",
+    y = "Average Percent GDP Growth (2004-2019)") +
+  ggsave(filename = "graphs/bli_gdpgrowth.jpg")
+
+ggplot(mydata, aes(x = bli, y = gfcf_growth)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and GFCF Growth",
+    x = "BLI Score",
+    y = "Average Percent GFCF Growth (2004-2019)") +
+  ggsave(filename = "graphs/bli_gfcfgrowth.jpg")
+
+ggplot(mydata, aes(x = bli, y = gii)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and GII Scores",
+    x = "BLI Score",
+    y = "GII Score") +
+  ggsave(filename = "graphs/bli_gii.jpg")
+
+ggplot(mydata, aes(x = bli, y = recovery_rate)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and Creditor Recovery Rates",
+    x = "BLI Score",
+    y = "Creditor Recovery Rate (Cents on the Dollar)") +
+  ggsave(filename = "graphs/bli_recoveryrate.jpg")
+
+ggplot(mydata, aes(x = bli, y = time)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and Time",
+    x = "BLI Score",
+    y = "Time (Years)") +
+  ggsave(filename = "graphs/bli_time.jpg")
+
+ggplot(mydata, aes(x = bli, y = cost)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE) +
+  theme_bw() + 
+  labs(
+    title = "BLI and Cost",
+    x = "BLI Score",
+    y = "Cost (Percentage of Debtor's Estate)") +
+  ggsave(filename = "graphs/bli_cost.jpg")
+```
+
+## Correlation Plots
+
+```{r}
+mydata <- read_csv(file = "graphs/international_bankruptcy_systems_v3.csv",
+                   col_types = cols(jurisdiction = col_character()))  %>%
+  select(-bli_category) %>%
+  select(-continent) %>%
+  select(-wb_resolving_insolvency)
+
+colnames(mydata)[1] <- "group"
+colnames(mydata)[2] <- "BLI"
+colnames(mydata)[3] <- "GDP Growth"
+colnames(mydata)[4] <- "GFCF Growth"
+colnames(mydata)[5] <- "GII"
+colnames(mydata)[6] <- "Recovery Rate"
+colnames(mydata)[7] <- "Time"
+colnames(mydata)[8] <- "Cost"
+
+mydata <- mydata %>%
+  mutate_each(funs(rescale), -group)
+
+mydata_country <- mydata %>%
+  filter((group == "Australia" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Australia") +
+  ggsave(filename = "graphs/bli_australia.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Austria" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Austria") +
+  ggsave(filename = "graphs/bli_austria.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Belgium" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Belgium") +
+  ggsave(filename = "graphs/bli_belgium.jpg")
+
+
+mydata_country <- mydata %>%
+  filter((group == "Canada" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Canada") +
+  ggsave(filename = "graphs/bli_canada.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Finland" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Finland") +
+  ggsave(filename = "graphs/bli_finland.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Germany" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Germany") +
+  ggsave(filename = "graphs/bli_germany.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Hong Kong" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Hong Kong") +
+  ggsave(filename = "graphs/bli_hongkong.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Israel" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Israel") +
+  ggsave(filename = "graphs/bli_israel.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Japan" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Japan") +
+  ggsave(filename = "graphs/bli_japan.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Malaysia" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Malaysia") +
+  ggsave(filename = "graphs/bli_malaysia.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Shenzhen" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Shenzhen") +
+  ggsave(filename = "graphs/bli_shenzhen.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Singapore" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "Singapore") +
+  ggsave(filename = "graphs/bli_singapore.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "United Kingdom" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4) +
+  theme(legend.position = "none") +
+  labs(title = "United Kingdom") +
+  ggsave(filename = "graphs/bli_unitedkingdom.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "United States" | group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, base.size = 10) +
+  theme(legend.position = "none") +
+  labs(title = "United States") +
+  ggsave(filename = "graphs/bli_unitedstates.jpg")
+```
+
+## Regressions
+
+```{r}
+mydata_r <- lm(data = mydata, formula = gii ~ bli + gdp_growth + gfcf)
+summary(mydata_r)
+```
+
+## Additional T Tests
+
+```{r}
+t.test(mydata$gdp_growth[mydata$bli_category=="Low"], mydata$gdp_growth[mydata$bli_category=="High"])
+t.test(mydata$gfcf[mydata$bli_category=="Low"], mydata$gfcf[mydata$bli_category=="High"])
+t.test(mydata$recovery_rate[mydata$bli_category=="Low"], mydata$recovery_rate[mydata$bli_category=="High"])
+t.test(mydata$cost[mydata$bli_category=="Low"], mydata$cost[mydata$bli_category=="High"])
+t.test(mydata$time[mydata$bli_category=="Low"], mydata$time[mydata$bli_category=="High"])
+```
+
+#################
+
+## Ariana -- Bloggers
+
+```{r}
+# Name of the file you want to read into the program in quotes. 
+mydata <- read_csv(file = "graphs/ariana.csv")
+
+# Change the words in quotes to filter for rows that contain different words.  
+mydata_blog <- mydata %>% 
+  filter(q5 %like% c("blog", "Blog"))
+
+# Create a graph! You can change the title and axes labels as you wish. 
+ggplot(mydata_blog, aes(x = q6)) +
+  geom_bar() + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "Level of Satisfaction",
+    y = "Count",
+    title = "Blogger Satisfaction"
+  ) +
+  ggsave(filename = "graphs/ariana_bloggers.jpg")
+
+
+
+
+
+
+mydata_nonblog <- mydata %>% 
+  filter(!q5 %like% c("blog", "Blog"))
+
+ggplot(mydata_nonblog, aes(x = q6)) +
+  geom_bar() + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "Level of Satisfaction",
+    y = "Count",
+    title = "Non-Blogger Satisfaction"
+  ) +
+  ggsave(filename = "graphs/ariana_nonbloggers.jpg")
+
+mydata_blog$value <- as.numeric(ifelse(mydata_blog$q6 == "A. Fully satisfied", '1',
+                     ifelse(mydata_blog$q6 == "B. Basic Satisfaction", '2',
+                     ifelse(mydata_blog$q6 == "C. Insufficient coverage area", '3',
+                     ifelse(mydata_blog$q6 == "D. Too little visible area", '4', '5')))))
+
+mydata_nonblog$value <- as.numeric(ifelse(mydata_nonblog$q6 == "A. Fully satisfied", '1',
+                     ifelse(mydata_blog$q6 == "B. Basic Satisfaction", '2',
+                     ifelse(mydata_blog$q6 == "C. Insufficient coverage area", '3',
+                     ifelse(mydata_blog$q6 == "D. Too little visible area", '4', '5')))))
+
+t.test(mydata_blog$value, mydata_nonblog$value)
+```
+
+## Ariana -- Students
+
+```{r}
+mydata <- read_csv(file = "graphs/ariana.csv")
+
+mydata_blog <- mydata %>% 
+  filter(q5 %like% c("student", "Student"))
+
+ggplot(mydata_blog, aes(x = q6)) +
+  geom_bar() + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "Level of Satisfaction",
+    y = "Count",
+    title = "Student Satisfaction"
+  ) +
+  ggsave(filename = "graphs/ariana_students.jpg")
+
+mydata_nonblog <- mydata %>% 
+  filter(!q5 %like% c("student", "Student"))
+
+ggplot(mydata_nonblog, aes(x = q6)) +
+  geom_bar() + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = "Level of Satisfaction",
+    y = "Count",
+    title = "Non-Student Satisfaction"
+  ) +
+  ggsave(filename = "graphs/ariana_nonstudents.jpg")
+```
+
+```{r print-code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
