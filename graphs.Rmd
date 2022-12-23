@@ -169,11 +169,12 @@ write.csv(mydata.p, "graphs/coefficient_matrix_p.csv")
 
 ```{r}
 mydata <- read_csv(file = "graphs/international_bankruptcy_systems_v3.csv",
-                   col_types = cols(jurisdiction = col_character())) 
+                   col_types = cols(jurisdiction = col_character())) %>%
+  filter(jurisdiction != "Average")
 
 ggplot(mydata, aes(x = bli, y = gdp_growth)) +
   geom_point() +
-  geom_smooth(method = lm, se = TRUE) +
+  geom_smooth(method = lm, se = FALSE) +
   theme_bw() + 
   labs(
     title = "BLI and GDP Growth",
@@ -183,7 +184,7 @@ ggplot(mydata, aes(x = bli, y = gdp_growth)) +
 
 ggplot(mydata, aes(x = bli, y = gfcf_growth)) +
   geom_point() +
-  geom_smooth(method = lm, se = TRUE) +
+  geom_smooth(method = lm, se = FALSE) +
   theme_bw() + 
   labs(
     title = "BLI and GFCF Growth",
@@ -193,7 +194,7 @@ ggplot(mydata, aes(x = bli, y = gfcf_growth)) +
 
 ggplot(mydata, aes(x = bli, y = gii)) +
   geom_point() +
-  geom_smooth(method = lm, se = TRUE) +
+  geom_smooth(method = lm, se = FALSE) +
   theme_bw() + 
   labs(
     title = "BLI and GII Scores",
@@ -386,7 +387,7 @@ mydata_country <- mydata %>%
   filter(group == "Shenzhen") %>%
   select(-R3)
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-         values.radar = c("0", "0.5", "1"), plot.title = "Shenzhen's Scores (by Criterion)") +
+         values.radar = c("0", "0.5", "1"), plot.title = "By Criterion") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_shenzhen_by_criterion.jpg")
 
@@ -399,7 +400,7 @@ mydata_country <- mydata %>%
   mutate(D = rowMeans(.[,c("D1", "D2", "D3")])) %>%
   select(group, P, E, R, D)
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-         values.radar = c("0", "0.5", "1"), plot.title = "Shenzhen's Scores (by Category)") +
+         values.radar = c("0", "0.5", "1"), plot.title = "By Category") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_shenzhen_by_category.jpg")
 
@@ -408,7 +409,7 @@ ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4,
 mydata_country <- mydata %>%
   filter(group == "Average")
   ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-         values.radar = c("0", "0.5", "1"), plot.title = "Average Scores (by Criterion)") +
+         values.radar = c("0", "0.5", "1"), plot.title = "By Criterion") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_all_by_criterion.jpg")
 
@@ -420,11 +421,20 @@ mydata_country <- mydata %>%
             R = mean(c(R1, R2, R3), na.rm=TRUE),
             D = mean(c(D1, D2, D3)))
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-         values.radar = c("0", "0.5", "1"), plot.title = "Average Scores (by Category)") +
+         values.radar = c("0", "0.5", "1"), plot.title = "By Category") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_all_by_category.jpg")
 
 # Shenzhen and All 
+
+mydata_country <- mydata %>%
+  filter((group == "Shenzhen") | (group == "Average")) %>%
+  select(-R3) 
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
+        values.radar = c("0", "0.5", "1"), 
+        plot.title = "By Criterion") +
+  theme(legend.position = "none") +
+  ggsave(filename = "graphs/bli_shenzhen_all_by_criterion.jpg")
 
 mydata_country <- mydata %>%
   filter((group == "Shenzhen") | (group == "Average")) %>%
@@ -436,20 +446,19 @@ mydata_country <- mydata %>%
   select(c(group, P, E, R, D))
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
          values.radar = c("0", "0.5", "1"), 
-         plot.title = "By Criterion") +
-  theme(legend.position = "none") +
-  ggsave(filename = "graphs/bli_shenzhen_all_by_criterion.jpg")
-
-mydata_country <- mydata %>%
-  filter((group == "Shenzhen") | (group == "Average")) %>%
-  select(-R3) 
-ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-        values.radar = c("0", "0.5", "1"), 
-        plot.title = "By Category") +
+         plot.title = "By Category") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_shenzhen_all_by_category.jpg")
 
 # Canada and All 
+
+mydata_country <- mydata %>%
+  filter((group == "Canada") | (group == "Average"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
+        values.radar = c("0", "0.5", "1"), 
+        plot.title = "By Criterion") +
+  theme(legend.position = "none") +
+  ggsave(filename = "graphs/bli_canada_all_by_criterion.jpg")
 
 mydata_country <- mydata %>%
   filter((group == "Canada") | (group == "Average")) %>%
@@ -460,19 +469,19 @@ mydata_country <- mydata %>%
   select(c(group, P, E, R, D))
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
          values.radar = c("0", "0.5", "1"), 
-         plot.title = "By Criterion") +
-  theme(legend.position = "none") +
-  ggsave(filename = "graphs/bli_canada_all_by_criterion.jpg")
-
-mydata_country <- mydata %>%
-  filter((group == "Canada") | (group == "Average"))
-ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
-        values.radar = c("0", "0.5", "1"), 
-        plot.title = "By Category") +
+         plot.title = "By Category") +
   theme(legend.position = "none") +
   ggsave(filename = "graphs/bli_canada_all_by_category.jpg")
 
 # Germany and All
+
+mydata_country <- mydata %>%
+  filter((group == "Germany") | (group == "Average")) 
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
+        values.radar = c("0", "0.5", "1"), 
+        plot.title = "By Criterion") +
+  theme(legend.position = "none") +
+  ggsave(filename = "graphs/bli_germany_all_by_criterion.jpg")
 
 mydata_country <- mydata %>%
   filter((group == "Germany") | (group == "Average")) %>%
@@ -483,25 +492,63 @@ mydata_country <- mydata %>%
   select(c(group, P, E, R, D))
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
          values.radar = c("0", "0.5", "1"), 
-         plot.title = "By Criterion") +
+         plot.title = "By Category") +
   theme(legend.position = "none") +
-  ggsave(filename = "graphs/bli_germany_all_by_criterion.jpg")
+  ggsave(filename = "graphs/bli_germany_all_by_category.jpg")
+
+# Asian and Non-Asian (NEED TO EDIT)
+
+mydata <- read_csv(file = "graphs/bli_scores_asia_nonasia.csv",
+                   col_types = cols(Jurisdiction = col_character()))  %>%
+  select(-c(P1, P2, P3, E1, E2, E3, R1, R2, R3, D1, D2, D3, BLI))
+
+colnames(mydata)[1] <- "group"
+colnames(mydata)[2] <- "P1"
+colnames(mydata)[3] <- "P2"
+colnames(mydata)[4] <- "P3"
+colnames(mydata)[5] <- "E1"
+colnames(mydata)[6] <- "E2"
+colnames(mydata)[7] <- "E3"
+colnames(mydata)[8] <- "R1"
+colnames(mydata)[9] <- "R2"
+colnames(mydata)[10] <- "R3"
+colnames(mydata)[11] <- "D1"
+colnames(mydata)[12] <- "D2"
+colnames(mydata)[13] <- "D3"
 
 mydata_country <- mydata %>%
-  filter((group == "Germany") | (group == "Average")) 
+  filter((group == "Asia" | group == "Outside Asia"))
+ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
+        values.radar = c("0", "0.5", "1"), 
+        plot.title = "By Criterion") +
+  theme(legend.position = "none") +
+  ggsave(filename = "graphs/bli_asia_nonasia_by_criterion.jpg")
+
+mydata_country <- mydata %>%
+  filter((group == "Asia") | (group == "Outside Asia")) %>%
+  mutate(P = rowMeans(.[,2:4])) %>%
+  mutate(E = rowMeans(.[,5:7])) %>%
+  mutate(R = rowMeans(.[,8:10])) %>%
+  mutate(D = rowMeans(.[,11:13])) %>%
+  select(c(group, P, E, R, D))
 ggradar(mydata_country, axis.label.size = 4, grid.label.size = 4, 
         values.radar = c("0", "0.5", "1"), 
         plot.title = "By Category") +
   theme(legend.position = "none") +
-  ggsave(filename = "graphs/bli_germany_all_by_category.jpg")
+  ggsave(filename = "graphs/bli_asia_nonasia_by_category.jpg")
 ```
 
 ## T Tests (BLI and Macroeconomic Indicators)
 
 ```{r}
-t.test(mydata$gdp_growth[mydata$bli_category=="Low"], mydata$gdp_growth[mydata$bli_category=="High"])
-t.test(mydata$gfcf[mydata$bli_category=="Low"], mydata$gfcf[mydata$bli_category=="High"])
-t.test(mydata$recovery_rate[mydata$bli_category=="Low"], mydata$recovery_rate[mydata$bli_category=="High"])
+t.test(mydata$gdp_growth[mydata$bli_category=="Low"], 
+       mydata$gdp_growth[mydata$bli_category=="High"])
+t.test(mydata$gfcf_growth[mydata$bli_category=="Low"],
+       mydata$gfcf_growth[mydata$bli_category=="High"])
+t.test(mydata$gii[mydata$bli_category=="Low"],
+       mydata$gii[mydata$bli_category=="High"])
+t.test(mydata$recovery_rate[mydata$bli_category=="Low"],
+       mydata$recovery_rate[mydata$bli_category=="High"])
 t.test(mydata$cost[mydata$bli_category=="Low"], mydata$cost[mydata$bli_category=="High"])
 t.test(mydata$time[mydata$bli_category=="Low"], mydata$time[mydata$bli_category=="High"])
 ```

@@ -1,0 +1,57 @@
+---
+title: "travel_log"
+author: "Ryan Zhang"
+date: "8/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(ggplot2)
+library(ggrepel)
+```
+
+## Including Plots
+
+You can also embed plots,
+for example:
+
+```{r pressure, echo=FALSE}
+trips <- read.csv("/Users/ryan/Library/CloudStorage/GoogleDrive-hsn308765@gmail.com/My Drive/travel_log.csv", stringsAsFactors = FALSE)
+cities <- read.csv("/Users/ryan/Library/CloudStorage/GoogleDrive-hsn308765@gmail.com/My Drive/travel_cities.csv", stringsAsFactors = FALSE)
+
+
+worldmap <- borders("world", colour="#efede1", fill="#efede1") 
+ggplot() + worldmap + 
+  geom_curve(data = trips,
+             aes(x = depart_lon, y = depart_lat, xend = arrive_lon, yend = arrive_lat),
+             col = "#00008b",
+             size = 0.3,
+             curvature = 0.2) +
+  geom_point(data = trips,
+             aes(x = depart_lon, y = depart_lat), 
+             colour = "blue",
+             size = 0.5) +
+  geom_point(data = trips,
+             aes(x = arrive_lon, y = arrive_lat), 
+             colour = "blue",
+             size = 0.5) +
+  geom_text_repel(data = cities, aes(x = city_lon, y = city_lat, 
+                                     label = city), col = "black", 
+                                     size = 1, segment.color = NA, max.overlaps = 90) + 
+  theme(panel.background = element_rect(fill = "white"),
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5, size = 12)) +
+  labs(title = "Ryan's Travel Log") +
+  ggsave(filename = "travel_map.jpg")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
